@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const Course = require("../models/course");
+const Course = require("../models/Course");
 const auth = require("../middleware/auth");
 
 // Multer setup for thumbnail upload

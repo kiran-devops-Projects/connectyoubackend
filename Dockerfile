@@ -14,6 +14,8 @@ COPY . .
 # Set NODE_ENV explicitly
 ENV NODE_ENV=production
 
+COPY .env.production ./.env.production
+
 # Expose the port your app listens on
 EXPOSE 5000
 
