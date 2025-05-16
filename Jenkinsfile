@@ -102,8 +102,8 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS_ID}", usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
                     script {
                         sh '''
-                            DEPLOYMENT_REPO="${GIT_REPO_NAME}"
-                            DEPLOYMENT_FILE="connectyoubackend-manifest/deployment.yaml"
+                            DEPLOYMENT_REPO="connectyoubackend-manifest"
+                            DEPLOYMENT_FILE="deployment.yaml"
                             IMAGE_TAG=${BUILD_NUMBER}
                             IMAGE_NAME="${IMAGE_NAME}"
                             ECR_REPO="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
