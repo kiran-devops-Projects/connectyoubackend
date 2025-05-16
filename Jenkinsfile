@@ -128,8 +128,8 @@ pipeline {
 
                                 if ! git diff --cached --quiet; then
                                     git commit -m "🔧 Update deployment image to version ${IMAGE_TAG}"
-                                    git push origin ms1 || { echo "❌ Push failed"; exit 1; }
-                                    echo "✅ Deployment file updated and pushed to ms1 branch."
+                                    git push origin main || { echo "❌ Push failed"; exit 1; }
+                                    echo "✅ Deployment file updated and pushed to main branch."
                                 else
                                     echo "ℹ️ No changes to commit in deployment.yaml."
                                 fi
