@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const Mentor = require("../models/mentor");
+const Mentor = require("../models/Mentor");
 const MentorRequest = require("../models/mentorRequest");
 const auth = require('../middleware/auth');
 // Setup multer for file upload

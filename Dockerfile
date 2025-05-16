@@ -1,5 +1,5 @@
 # Use Node.js LTS version as the base image
-FROM node:18-alpine
+FROM node:20.19.2-alpine
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -21,3 +21,4 @@ EXPOSE 5000
 
 # Run the app (dotenv will pick up env variables injected via Kubernetes)
 CMD ["node", "server.js"]
+
