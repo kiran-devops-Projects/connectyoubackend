@@ -18,4 +18,4 @@ ENV NODE_ENV=production
 EXPOSE 5000
 
 # Run the app (dotenv will pick up env variables injected via Kubernetes)
-CMD ["node", "src/server.js"]
+CMD ["node", "server.js"]

@@ -82,6 +82,10 @@ app.use('/api/chat', (req, res, next) => {
     next();
 }, chatRoutes);  // Add chat routes
 
+app.get("/", (req, res) => {
+    res.send("✅ ConnectYou backend is running");
+});
+
 // Health check endpoint for service monitoring
 app.get("/health", (req, res) => {
     const status = {
