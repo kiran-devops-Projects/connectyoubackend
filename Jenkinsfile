@@ -103,14 +103,14 @@ pipeline {
                     script {
                         sh '''
                             DEPLOYMENT_REPO="connectyoubackend-manifest"
-                            DEPLOYMENT_FILE="deployment.yaml"
+                            DEPLOYMENT_FILE="manifests/deployment.yaml"
                             IMAGE_TAG=${BUILD_NUMBER}
                             IMAGE_NAME="${IMAGE_NAME}"
                             ECR_REPO="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
                             CLONE_DIR="deployment-repo"
 
                             echo "🔄 Cloning deployment repo (branch: main)..."
-                            git clone -b main "https://x-access-token:${GIT_PASSWORD}@github.com/${GIT_ORG_NAME}/${DEPLOYMENT_REPO}.git" "${CLONE_DIR}" || { echo "❌ Clone failed"; exit 1; }
+                            git clone -b manifest-files "https://x-access-token:${GIT_PASSWORD}@github.com/${GIT_ORG_NAME}/${DEPLOYMENT_REPO}.git" "${CLONE_DIR}" || { echo "❌ Clone failed"; exit 1; }
 
                             cd "${CLONE_DIR}" || { echo "❌ Could not enter clone directory"; exit 1; }
 
@@ -128,7 +128,7 @@ pipeline {
 
                                 if ! git diff --cached --quiet; then
                                     git commit -m "🔧 Update deployment image to version ${IMAGE_TAG}"
-                                    git push origin main || { echo "❌ Push failed"; exit 1; }
+                                    git push origin manifest-files || { echo "❌ Push failed"; exit 1; }
                                     echo "✅ Deployment file updated and pushed to main branch."
                                 else
                                     echo "ℹ️ No changes to commit in deployment.yaml."
