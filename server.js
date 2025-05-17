@@ -43,14 +43,21 @@ app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 
 // CORS Configuration (Global CORS handling)
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim());
+
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? process.env.ALLOWED_ORIGINS?.split(',') 
-        : '*',
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"], // Add x-auth-token here
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
     credentials: true
 }));
+
 
 // Rate limiting for API routes
 const limiter = rateLimit({
