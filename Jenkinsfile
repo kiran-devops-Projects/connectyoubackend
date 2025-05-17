@@ -103,7 +103,7 @@ pipeline {
                     script {
                         sh '''
                             DEPLOYMENT_REPO="connectyoubackend-manifest"
-                            DEPLOYMENT_FILE="deployment.yaml"
+                            DEPLOYMENT_FILE="manifests/deployment.yaml"
                             IMAGE_TAG=${BUILD_NUMBER}
                             IMAGE_NAME="${IMAGE_NAME}"
                             ECR_REPO="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
