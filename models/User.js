@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require('uuid'); // Generates UUIDs
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = new mongoose.Schema(
   {
@@ -17,7 +17,17 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, select: true },
     userType: { type: String, enum: ["student", "alumni"], required: true },
     role: { type: String, enum: ["student", "instructor", "admin"], default: "student" },
-    profile: { type: mongoose.Schema.Types.ObjectId, ref: 'Profile' }
+    profile: { type: mongoose.Schema.Types.ObjectId, ref: 'Profile' },
+    
+    // Password reset fields
+    resetPasswordToken: {
+      type: String,
+      default: null
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null
+    }
   },
   { timestamps: true, discriminatorKey: 'userType' }
 );
@@ -38,7 +48,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 const User = mongoose.model("User", userSchema);
 
-// 🎓 Student Schema
+// Student Schema
 const studentSchema = new mongoose.Schema({
   university: String,
   branch: {
@@ -57,7 +67,7 @@ const studentSchema = new mongoose.Schema({
 });
 const Student = User.discriminator("student", studentSchema);
 
-// 👨‍💼 Alumni Schema
+// Alumni Schema
 const alumniSchema = new mongoose.Schema({
   graduationYear: { type: String, required: true },
   currentCompany: String,

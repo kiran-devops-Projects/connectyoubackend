@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken');
 const { User, Student, Alumni } = require('../models/User');
 const auth = require('../middleware/auth');
 const validator = require('validator');
-
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const router = express.Router();
 
@@ -234,6 +235,224 @@ router.get('/profile', auth, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+
+
+// Configure nodemailer (you'll need to set up your email service)
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // or your preferred email service
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// Updated User Schema - Add these fields to your User model
+/*
+Add these fields to your userSchema:
+
+resetPasswordToken: {
+  type: String,
+  default: null
+},
+resetPasswordExpires: {
+  type: Date,
+  default: null
+}
+*/
+
+// Forgot Password Route
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Input validation
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const normalizedEmail = validator.normalizeEmail(email.trim());
+    if (!validator.isEmail(normalizedEmail)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return res.status(200).json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.' 
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set reset token and expiration (15 minutes)
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    await user.save();
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // Email content
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Password Reset Request</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>You requested a password reset for your account. Click the button below to reset your password:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #007bff; color: white; padding: 12px 30px; 
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        
+        <p>This link will expire in 15 minutes for security reasons.</p>
+        <p>If you didn't request this password reset, please ignore this email.</p>
+        
+        <hr style="margin: 30px 0;">
+        <p style="color: #666; font-size: 12px;">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          ${resetUrl}
+        </p>
+      </div>
+    `;
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: emailContent
+    });
+
+    res.status(200).json({ 
+      message: 'If an account with that email exists, a password reset link has been sent.' 
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Error processing password reset request' });
+  }
+});
+
+// Reset Password Route
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    // Input validation
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ message: 'Password and confirm password are required' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    if (!validator.isStrongPassword(password)) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character' 
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid token and not expired
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    await user.save();
+
+    // Send confirmation email
+    const confirmationEmail = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Password Reset Successful</h2>
+        <p>Hello ${user.firstName},</p>
+        <p>Your password has been successfully reset.</p>
+        <p>If you didn't make this change, please contact support immediately.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL}/login" 
+             style="background-color: #28a745; color: white; padding: 12px 30px; 
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            Login to Your Account
+          </a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Password Reset Successful',
+      html: confirmationEmail
+    });
+
+    res.status(200).json({ message: 'Password reset successful' });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Error resetting password' });
+  }
+});
+
+// Verify Reset Token Route (optional - to check if token is valid before showing reset form)
+router.get('/verify-reset-token/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Invalid or expired reset token' 
+      });
+    }
+
+    res.status(200).json({ 
+      valid: true, 
+      message: 'Token is valid',
+      email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') // Partially hide email
+    });
+
+  } catch (error) {
+    console.error('Verify token error:', error);
+    res.status(500).json({ valid: false, message: 'Error verifying token' });
+  }
+});
+
+
+
+
+
+
 
 
 // Enroll in course
