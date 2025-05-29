@@ -37,6 +37,7 @@ const jobsRoute = require('./routes/jobs');
 const eventRoutes = require('./routes/events');
 const workshopRoutes = require('./routes/workshops');
 const chatRoutes = require('./routes/chat');  // Added chat routes
+const ApplicationRoutes=require('./routes/application');
 
 // Security and logging middleware
 app.use(helmet());
@@ -84,6 +85,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/jobs', jobsRoute);
 app.use('/api/events', eventRoutes);
 app.use('/api/workshops', workshopRoutes);
+app.use('/api/application',ApplicationRoutes);
 app.use('/api/chat', (req, res, next) => {
     req.io = io;  // Pass io instance to the request object for routes
     next();
