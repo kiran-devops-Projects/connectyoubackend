@@ -110,7 +110,7 @@ router.post('/register', async (req, res) => {
 
     // If the user is alumni, create a mentor record
     if (userType === 'alumni') {
-      const Mentor = require('../models/mentor'); // Ensure path is correct
+      const Mentor = require('../models/Mentor'); // Ensure path is correct
 
       try {
         const existingMentor = await Mentor.findById(user._id);
